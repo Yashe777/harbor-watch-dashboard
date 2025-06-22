@@ -1,14 +1,3 @@
-
-import Appointments from '../components/Appointments';
-
-export default function Dashboard() {
-  return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Appointments</h1>
-      <Appointments />
-    </main>
-  );
-}
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +31,16 @@ interface Notification {
   time: string;
   priority: "high" | "medium" | "low";
   read: boolean;
+}
+import Appointments from '../components/Appointments';
+
+export default function Dashboard() {
+  return (
+    <main className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Appointments</h1>
+      <Appointments />
+    </main>
+  );
 }
 
 interface Appointment {

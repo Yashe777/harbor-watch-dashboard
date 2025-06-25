@@ -11,16 +11,40 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
+          appointment_date: string | null
+          appointment_time: string | null
           created_at: string
           id: number
+          location: string | null
+          name: string | null
+          notes: string | null
+          phone: string | null
+          service: string | null
+          status: string | null
         }
         Insert: {
+          appointment_date?: string | null
+          appointment_time?: string | null
           created_at?: string
           id?: number
+          location?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          service?: string | null
+          status?: string | null
         }
         Update: {
+          appointment_date?: string | null
+          appointment_time?: string | null
           created_at?: string
           id?: number
+          location?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string | null
+          service?: string | null
+          status?: string | null
         }
         Relationships: []
       }

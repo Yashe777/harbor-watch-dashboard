@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,44 +24,13 @@ import {
   Filter
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface Notification {
-  id: string;
-  type: "appointment" | "emergency" | "lab" | "message";
-  title: string;
-  message: string;
-  time: string;
-  priority: "high" | "medium" | "low";
-  read: boolean;
-}
-
-interface Appointment {
-  id: string;
-  patientName: string;
-  time: string;
-  type: "ER" | "General" | "Teleconsultation";
-  reason: string;
-  status: "scheduled" | "in-progress" | "completed";
-  priority: "urgent" | "normal" | "routine";
-}
-
-interface Patient {
-  id: string;
-  name: string;
-  age: number;
-  condition: string;
-  allergies: string[];
-  lastVisit: string;
-  files: number;
-}
+import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
+import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
-  // Initial empty state - will be populated from Supabase
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [patients] = useState<Patient[]>([]);
+  const { appointments, loading: appointmentsLoading } = useRealtimeAppointments();
+  const { notifications, loading: notificationsLoading, markAsRead } = useRealtimeNotifications();
   const [user, setUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState("list");
 
@@ -72,11 +42,8 @@ export default function Dashboard() {
     }
     setUser(JSON.parse(auth));
 
-    // TODO: Replace with Supabase real-time subscriptions
-    // This will listen for real notifications and appointments from the client app
-    console.log("Dashboard ready for real-time data from client app:", "harhour-aid-mobile-65.lovable.app");
-    
-    // Removed fake notification generation - will be replaced with real Supabase subscriptions
+    console.log("Dashboard connected to client app:", "harhour-aid-mobile-65.lovable.app");
+    console.log("Real-time integration active - waiting for appointments and notifications");
     
   }, [navigate]);
 
@@ -89,14 +56,31 @@ export default function Dashboard() {
     });
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
-    );
-    // TODO: Update read status in Supabase
-  };
-
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Transform appointment data for display
+  const transformedAppointments = appointments.map(apt => ({
+    id: apt.id.toString(),
+    patientName: apt.patient_name || apt.name || "Unknown Patient",
+    time: apt.appointment_time || "Not specified",
+    type: apt.appointment_type || apt.service || "General",
+    reason: apt.reason || apt.notes || "No reason specified",
+    status: apt.status || "scheduled",
+    priority: apt.priority || "normal",
+    phone: apt.patient_phone || apt.phone || "",
+    location: apt.location || "Not specified"
+  }));
+
+  // Transform notification data for display
+  const transformedNotifications = notifications.map(notif => ({
+    id: notif.id,
+    type: notif.type,
+    title: notif.title,
+    message: notif.message,
+    time: new Date(notif.created_at).toLocaleTimeString(),
+    priority: notif.priority,
+    read: notif.read
+  }));
 
   if (!user) return null;
 
@@ -154,9 +138,9 @@ export default function Dashboard() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{appointments.length}</div>
+                <div className="text-2xl font-bold">{transformedAppointments.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {appointments.filter(a => a.priority === "urgent").length} urgent, {appointments.filter(a => a.priority === "routine").length} routine
+                  {transformedAppointments.filter(a => a.priority === "urgent").length} urgent, {transformedAppointments.filter(a => a.priority === "routine").length} routine
                 </p>
               </CardContent>
             </Card>
@@ -168,7 +152,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-red-600">
-                  {notifications.filter(n => n.type === "emergency" && !n.read).length}
+                  {transformedNotifications.filter(n => n.type === "emergency" && !n.read).length}
                 </div>
                 <p className="text-xs text-muted-foreground">Awaiting response</p>
               </CardContent>
@@ -181,7 +165,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {notifications.filter(n => n.type === "message" && !n.read).length}
+                  {transformedNotifications.filter(n => n.type === "message" && !n.read).length}
                 </div>
                 <p className="text-xs text-muted-foreground">From client app</p>
               </CardContent>
@@ -194,7 +178,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {notifications.filter(n => n.type === "lab" && !n.read).length}
+                  {transformedNotifications.filter(n => n.type === "lab" && !n.read).length}
                 </div>
                 <p className="text-xs text-muted-foreground">Ready for review</p>
               </CardContent>
@@ -214,8 +198,8 @@ export default function Dashboard() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Today's Schedule</CardTitle>
-                      <CardDescription>Appointments from client app: harhour-aid-mobile-65.lovable.app</CardDescription>
+                      <CardTitle>Live Appointments</CardTitle>
+                      <CardDescription>Real-time appointments from client app: harhour-aid-mobile-65.lovable.app</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="sm">
@@ -229,15 +213,20 @@ export default function Dashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {appointments.length === 0 ? (
+                  {appointmentsLoading ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300 animate-spin" />
+                      <p>Loading appointments...</p>
+                    </div>
+                  ) : transformedAppointments.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                       <p>No appointments yet</p>
-                      <p className="text-sm">Waiting for appointments from client app</p>
+                      <p className="text-sm">Appointments from your client app will appear here automatically</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {appointments.map((appointment) => (
+                      {transformedAppointments.map((appointment) => (
                         <div
                           key={appointment.id}
                           className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -255,6 +244,9 @@ export default function Dashboard() {
                               <div className="flex items-center space-x-2 mt-1">
                                 <Badge variant="outline">{appointment.type}</Badge>
                                 <span className="text-xs text-gray-500">{appointment.status}</span>
+                                {appointment.phone && (
+                                  <span className="text-xs text-gray-500">📞 {appointment.phone}</span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -282,19 +274,24 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Real-Time Notifications</CardTitle>
-                  <CardDescription>Live alerts from client app</CardDescription>
+                  <CardDescription>Live alerts from your client app</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-96">
-                    {notifications.length === 0 ? (
+                    {notificationsLoading ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300 animate-spin" />
+                        <p>Loading notifications...</p>
+                      </div>
+                    ) : transformedNotifications.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                         <p>No notifications yet</p>
-                        <p className="text-sm">Waiting for real-time alerts from client app</p>
+                        <p className="text-sm">Notifications from your client app will appear here automatically</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {notifications.map((notification) => (
+                        {transformedNotifications.map((notification) => (
                           <div
                             key={notification.id}
                             className={`p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -340,58 +337,15 @@ export default function Dashboard() {
             <TabsContent value="patients">
               <Card>
                 <CardHeader>
-                  <CardTitle>Patient Summaries</CardTitle>
-                  <CardDescription>Patient information from appointments</CardDescription>
+                  <CardTitle>Patient Information</CardTitle>
+                  <CardDescription>Patient data from appointments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {patients.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No patient data yet</p>
-                      <p className="text-sm">Patient summaries will appear when appointments are created</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {patients.map((patient) => (
-                        <div
-                          key={patient.id}
-                          className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                <span className="text-blue-600 font-semibold">
-                                  {patient.name.split(' ').map(n => n[0]).join('')}
-                                </span>
-                              </div>
-                              <div>
-                                <h3 className="font-semibold">{patient.name}</h3>
-                                <p className="text-sm text-gray-600">Age: {patient.age} • {patient.condition}</p>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className="text-xs text-gray-500">Last visit: {patient.lastVisit}</span>
-                                  {patient.allergies.length > 0 && (
-                                    <Badge variant="destructive" className="text-xs">
-                                      Allergies: {patient.allergies.join(', ')}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button variant="outline" size="sm">
-                                <FileText className="h-4 w-4 mr-2" />
-                                Files ({patient.files})
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Activity className="h-4 w-4 mr-2" />
-                                History
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>Patient profiles will be created automatically</p>
+                    <p className="text-sm">When appointments include patient information from your client app</p>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -416,4 +370,4 @@ export default function Dashboard() {
       </div>
     </div>
   );
-};
+}

@@ -46,11 +46,11 @@ export const useRealtimeAppointments = () => {
           // Transform the data to match our interface
           const transformedData = (data || []).map(item => ({
             ...item,
-            patient_name: item.patient_name || null,
-            patient_phone: item.patient_phone || null,
-            appointment_type: item.appointment_type || null,
-            reason: item.reason || null,
-            priority: item.priority || null,
+            patient_name: (item as any).patient_name || null,
+            patient_phone: (item as any).patient_phone || null,
+            appointment_type: (item as any).appointment_type || null,
+            reason: (item as any).reason || null,
+            priority: (item as any).priority || null,
           }));
           setAppointments(transformedData);
           console.log('Loaded appointments:', transformedData.length);
@@ -78,11 +78,11 @@ export const useRealtimeAppointments = () => {
           console.log('New appointment received:', payload.new);
           const newAppointment = {
             ...payload.new,
-            patient_name: payload.new.patient_name || null,
-            patient_phone: payload.new.patient_phone || null,
-            appointment_type: payload.new.appointment_type || null,
-            reason: payload.new.reason || null,
-            priority: payload.new.priority || null,
+            patient_name: (payload.new as any).patient_name || null,
+            patient_phone: (payload.new as any).patient_phone || null,
+            appointment_type: (payload.new as any).appointment_type || null,
+            reason: (payload.new as any).reason || null,
+            priority: (payload.new as any).priority || null,
           } as Appointment;
           
           setAppointments(prev => [newAppointment, ...prev]);
@@ -104,11 +104,11 @@ export const useRealtimeAppointments = () => {
           console.log('Appointment updated:', payload.new);
           const updatedAppointment = {
             ...payload.new,
-            patient_name: payload.new.patient_name || null,
-            patient_phone: payload.new.patient_phone || null,
-            appointment_type: payload.new.appointment_type || null,
-            reason: payload.new.reason || null,
-            priority: payload.new.priority || null,
+            patient_name: (payload.new as any).patient_name || null,
+            patient_phone: (payload.new as any).patient_phone || null,
+            appointment_type: (payload.new as any).appointment_type || null,
+            reason: (payload.new as any).reason || null,
+            priority: (payload.new as any).priority || null,
           } as Appointment;
           
           setAppointments(prev => 

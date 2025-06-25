@@ -20,35 +20,25 @@ export const useRealtimeNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch initial notifications using raw SQL query since the table might not be in types yet
+    // Fetch initial notifications using direct query since the table might not be in types yet
     const fetchNotifications = async () => {
       try {
-        const { data, error } = await supabase.rpc('exec_sql', {
-          sql: 'SELECT * FROM notifications ORDER BY created_at DESC'
-        }).then(async (result) => {
-          // If the RPC doesn't work, try direct query
-          if (result.error) {
-            return await supabase
-              .from('notifications' as any)
-              .select('*')
-              .order('created_at', { ascending: false });
+        // Try to fetch from notifications table directly
+        const response = await fetch(`https://vidswyunnkwmxgzrhrbt.supabase.co/rest/v1/notifications?order=created_at.desc`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
+            'Content-Type': 'application/json'
           }
-          return result;
-        }).catch(async () => {
-          // Fallback: try direct query
-          return await supabase
-            .from('notifications' as any)
-            .select('*')
-            .order('created_at', { ascending: false });
         });
 
-        if (error) {
-          console.error('Error fetching notifications:', error);
-          // Don't show error toast for notifications table not existing yet
-          setNotifications([]);
-        } else {
+        if (response.ok) {
+          const data = await response.json();
           setNotifications(data || []);
           console.log('Loaded notifications:', data?.length || 0);
+        } else {
+          console.error('Error fetching notifications: table may not exist yet');
+          setNotifications([]);
         }
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -107,23 +97,23 @@ export const useRealtimeNotifications = () => {
 
   const markAsRead = async (id: string) => {
     try {
-      // Use raw SQL update since the table might not be in types yet
-      const { error } = await supabase.rpc('exec_sql', {
-        sql: `UPDATE notifications SET read = true WHERE id = '${id}'`
-      }).catch(async () => {
-        // Fallback: try direct update
-        return await supabase
-          .from('notifications' as any)
-          .update({ read: true })
-          .eq('id', id);
+      // Use direct API call since notifications table might not be in types
+      const response = await fetch(`https://vidswyunnkwmxgzrhrbt.supabase.co/rest/v1/notifications?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ read: true })
       });
 
-      if (error) {
-        console.error('Error marking notification as read:', error);
-      } else {
+      if (response.ok) {
         setNotifications(prev => 
           prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
         );
+      } else {
+        console.error('Error marking notification as read');
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);

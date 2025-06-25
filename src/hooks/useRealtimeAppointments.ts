@@ -43,17 +43,8 @@ export const useRealtimeAppointments = () => {
             variant: "destructive",
           });
         } else {
-          // Transform the data to match our interface
-          const transformedData = (data || []).map(item => ({
-            ...item,
-            patient_name: (item as any).patient_name || null,
-            patient_phone: (item as any).patient_phone || null,
-            appointment_type: (item as any).appointment_type || null,
-            reason: (item as any).reason || null,
-            priority: (item as any).priority || null,
-          }));
-          setAppointments(transformedData);
-          console.log('Loaded appointments:', transformedData.length);
+          console.log('Loaded appointments:', data?.length || 0);
+          setAppointments(data || []);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -64,9 +55,9 @@ export const useRealtimeAppointments = () => {
 
     fetchAppointments();
 
-    // Subscribe to real-time changes
+    // Subscribe to real-time changes with proper channel naming
     const channel = supabase
-      .channel('appointments-channel')
+      .channel('appointments-realtime-channel')
       .on(
         'postgres_changes',
         {
@@ -75,21 +66,14 @@ export const useRealtimeAppointments = () => {
           table: 'appointments'
         },
         (payload) => {
-          console.log('New appointment received:', payload.new);
-          const newAppointment = {
-            ...payload.new,
-            patient_name: (payload.new as any).patient_name || null,
-            patient_phone: (payload.new as any).patient_phone || null,
-            appointment_type: (payload.new as any).appointment_type || null,
-            reason: (payload.new as any).reason || null,
-            priority: (payload.new as any).priority || null,
-          } as Appointment;
+          console.log('New appointment received via realtime:', payload.new);
+          const newAppointment = payload.new as Appointment;
           
           setAppointments(prev => [newAppointment, ...prev]);
           
           toast({
             title: "New Appointment",
-            description: `New appointment with ${newAppointment.patient_name || newAppointment.name || 'Unknown'} scheduled`,
+            description: `New appointment with ${newAppointment.name || 'Unknown'} scheduled`,
           });
         }
       )
@@ -101,24 +85,49 @@ export const useRealtimeAppointments = () => {
           table: 'appointments'
         },
         (payload) => {
-          console.log('Appointment updated:', payload.new);
-          const updatedAppointment = {
-            ...payload.new,
-            patient_name: (payload.new as any).patient_name || null,
-            patient_phone: (payload.new as any).patient_phone || null,
-            appointment_type: (payload.new as any).appointment_type || null,
-            reason: (payload.new as any).reason || null,
-            priority: (payload.new as any).priority || null,
-          } as Appointment;
+          console.log('Appointment updated via realtime:', payload.new);
+          const updatedAppointment = payload.new as Appointment;
           
           setAppointments(prev => 
             prev.map(apt => apt.id === updatedAppointment.id ? updatedAppointment : apt)
           );
+          
+          toast({
+            title: "Appointment Updated",
+            description: `Appointment with ${updatedAppointment.name || 'Unknown'} updated`,
+          });
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          console.log('Appointment deleted via realtime:', payload.old);
+          const deletedAppointment = payload.old as Appointment;
+          
+          setAppointments(prev => 
+            prev.filter(apt => apt.id !== deletedAppointment.id)
+          );
+          
+          toast({
+            title: "Appointment Cancelled",
+            description: `Appointment cancelled`,
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to appointments realtime updates');
+        }
+      });
 
     return () => {
+      console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, []);

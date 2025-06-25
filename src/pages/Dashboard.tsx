@@ -55,6 +55,10 @@ export default function Dashboard() {
     });
   };
 
+  const handleViewPatient = (appointmentId: string) => {
+    navigate(`/patient/${appointmentId}`);
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Transform appointment data for display
@@ -250,7 +254,11 @@ export default function Dashboard() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewPatient(appointment.id)}
+                            >
                               <User className="h-4 w-4 mr-2" />
                               View Patient
                             </Button>

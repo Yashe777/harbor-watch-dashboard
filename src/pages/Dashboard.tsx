@@ -23,6 +23,7 @@ import {
   Filter
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
 interface Notification {
   id: string;
   type: "appointment" | "emergency" | "lab" | "message";
@@ -31,16 +32,6 @@ interface Notification {
   time: string;
   priority: "high" | "medium" | "low";
   read: boolean;
-}
-import Appointments from '../components/Appointments';
-
-export default function Dashboard() {
-  return (
-    <main className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Appointments</h1>
-      <Appointments />
-    </main>
-  );
 }
 
 interface Appointment {
@@ -63,89 +54,13 @@ interface Patient {
   files: number;
 }
 
-const Dashboard = () => {
+export default function Dashboard() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "emergency",
-      title: "Emergency Assignment",
-      message: "Car accident at Main St & 5th Ave - ETA 8 minutes",
-      time: "2 minutes ago",
-      priority: "high",
-      read: false
-    },
-    {
-      id: "2",
-      type: "appointment",
-      title: "New Appointment",
-      message: "John Smith scheduled for 2:30 PM - Chest pain",
-      time: "5 minutes ago",
-      priority: "medium",
-      read: false
-    },
-    {
-      id: "3",
-      type: "lab",
-      title: "Lab Results Ready",
-      message: "Blood work completed for Maria Garcia",
-      time: "10 minutes ago",
-      priority: "medium",
-      read: true
-    }
-  ]);
-
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: "1",
-      patientName: "John Smith",
-      time: "14:30",
-      type: "ER",
-      reason: "Chest pain",
-      status: "scheduled",
-      priority: "urgent"
-    },
-    {
-      id: "2",
-      patientName: "Maria Garcia",
-      time: "15:00",
-      type: "General",
-      reason: "Follow-up visit",
-      status: "scheduled",
-      priority: "normal"
-    },
-    {
-      id: "3",
-      patientName: "Robert Johnson",
-      time: "15:30",
-      type: "Teleconsultation",
-      reason: "Medication review",
-      status: "scheduled",
-      priority: "routine"
-    }
-  ]);
-
-  const [patients] = useState<Patient[]>([
-    {
-      id: "1",
-      name: "John Smith",
-      age: 45,
-      condition: "Hypertension",
-      allergies: ["Penicillin", "Aspirin"],
-      lastVisit: "2024-01-15",
-      files: 3
-    },
-    {
-      id: "2",
-      name: "Maria Garcia",
-      age: 32,
-      condition: "Diabetes Type 2",
-      allergies: [],
-      lastVisit: "2024-01-10",
-      files: 5
-    }
-  ]);
-
+  
+  // Initial empty state - will be populated from Supabase
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients] = useState<Patient[]>([]);
   const [user, setUser] = useState<any>(null);
   const [currentView, setCurrentView] = useState("list");
 
@@ -157,27 +72,12 @@ const Dashboard = () => {
     }
     setUser(JSON.parse(auth));
 
-    // Simulate real-time notifications
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          type: Math.random() > 0.5 ? "appointment" : "emergency",
-          title: Math.random() > 0.5 ? "New Appointment" : "Emergency Alert",
-          message: "New update available",
-          time: "Just now",
-          priority: Math.random() > 0.6 ? "high" : "medium",
-          read: false
-        };
-        setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-        toast({
-          title: newNotification.title,
-          description: newNotification.message,
-        });
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
+    // TODO: Replace with Supabase real-time subscriptions
+    // This will listen for real notifications and appointments from the client app
+    console.log("Dashboard ready for real-time data from client app:", "harhour-aid-mobile-65.lovable.app");
+    
+    // Removed fake notification generation - will be replaced with real Supabase subscriptions
+    
   }, [navigate]);
 
   const handleLogout = () => {
@@ -193,6 +93,7 @@ const Dashboard = () => {
     setNotifications(prev => 
       prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
     );
+    // TODO: Update read status in Supabase
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -254,7 +155,9 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{appointments.length}</div>
-                <p className="text-xs text-muted-foreground">2 urgent, 1 routine</p>
+                <p className="text-xs text-muted-foreground">
+                  {appointments.filter(a => a.priority === "urgent").length} urgent, {appointments.filter(a => a.priority === "routine").length} routine
+                </p>
               </CardContent>
             </Card>
 
@@ -264,7 +167,9 @@ const Dashboard = () => {
                 <AlertTriangle className="h-4 w-4 text-red-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">2</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {notifications.filter(n => n.type === "emergency" && !n.read).length}
+                </div>
                 <p className="text-xs text-muted-foreground">Awaiting response</p>
               </CardContent>
             </Card>
@@ -275,8 +180,10 @@ const Dashboard = () => {
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">5</div>
-                <p className="text-xs text-muted-foreground">3 from reception</p>
+                <div className="text-2xl font-bold">
+                  {notifications.filter(n => n.type === "message" && !n.read).length}
+                </div>
+                <p className="text-xs text-muted-foreground">From client app</p>
               </CardContent>
             </Card>
 
@@ -286,7 +193,9 @@ const Dashboard = () => {
                 <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">7</div>
+                <div className="text-2xl font-bold">
+                  {notifications.filter(n => n.type === "lab" && !n.read).length}
+                </div>
                 <p className="text-xs text-muted-foreground">Ready for review</p>
               </CardContent>
             </Card>
@@ -306,7 +215,7 @@ const Dashboard = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Today's Schedule</CardTitle>
-                      <CardDescription>Manage your appointments and patient visits</CardDescription>
+                      <CardDescription>Appointments from client app: harhour-aid-mobile-65.lovable.app</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="sm">
@@ -320,43 +229,51 @@ const Dashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {appointments.map((appointment) => (
-                      <div
-                        key={appointment.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">{appointment.time}</div>
-                            <Badge variant={appointment.priority === "urgent" ? "destructive" : "secondary"}>
-                              {appointment.priority}
-                            </Badge>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{appointment.patientName}</h3>
-                            <p className="text-sm text-gray-600">{appointment.reason}</p>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <Badge variant="outline">{appointment.type}</Badge>
-                              <span className="text-xs text-gray-500">{appointment.status}</span>
+                  {appointments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No appointments yet</p>
+                      <p className="text-sm">Waiting for appointments from client app</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {appointments.map((appointment) => (
+                        <div
+                          key={appointment.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">{appointment.time}</div>
+                              <Badge variant={appointment.priority === "urgent" ? "destructive" : "secondary"}>
+                                {appointment.priority}
+                              </Badge>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{appointment.patientName}</h3>
+                              <p className="text-sm text-gray-600">{appointment.reason}</p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <Badge variant="outline">{appointment.type}</Badge>
+                                <span className="text-xs text-gray-500">{appointment.status}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm">
-                            <User className="h-4 w-4 mr-2" />
-                            View Patient
-                          </Button>
-                          {appointment.type === "Teleconsultation" && (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                              <Phone className="h-4 w-4 mr-2" />
-                              Join Call
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm">
+                              <User className="h-4 w-4 mr-2" />
+                              View Patient
                             </Button>
-                          )}
+                            {appointment.type === "Teleconsultation" && (
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                <Phone className="h-4 w-4 mr-2" />
+                                Join Call
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -365,48 +282,56 @@ const Dashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Real-Time Notifications</CardTitle>
-                  <CardDescription>Stay updated with the latest alerts and messages</CardDescription>
+                  <CardDescription>Live alerts from client app</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-96">
-                    <div className="space-y-3">
-                      {notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                            !notification.read ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
-                          }`}
-                          onClick={() => markAsRead(notification.id)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start space-x-3">
-                              <div className={`p-2 rounded-full ${
-                                notification.type === "emergency" ? "bg-red-100 text-red-600" :
-                                notification.type === "appointment" ? "bg-blue-100 text-blue-600" :
-                                notification.type === "lab" ? "bg-green-100 text-green-600" :
-                                "bg-purple-100 text-purple-600"
-                              }`}>
-                                {notification.type === "emergency" && <AlertTriangle className="h-4 w-4" />}
-                                {notification.type === "appointment" && <Calendar className="h-4 w-4" />}
-                                {notification.type === "lab" && <FileText className="h-4 w-4" />}
-                                {notification.type === "message" && <MessageSquare className="h-4 w-4" />}
+                    {notifications.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No notifications yet</p>
+                        <p className="text-sm">Waiting for real-time alerts from client app</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                              !notification.read ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
+                            }`}
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start space-x-3">
+                                <div className={`p-2 rounded-full ${
+                                  notification.type === "emergency" ? "bg-red-100 text-red-600" :
+                                  notification.type === "appointment" ? "bg-blue-100 text-blue-600" :
+                                  notification.type === "lab" ? "bg-green-100 text-green-600" :
+                                  "bg-purple-100 text-purple-600"
+                                }`}>
+                                  {notification.type === "emergency" && <AlertTriangle className="h-4 w-4" />}
+                                  {notification.type === "appointment" && <Calendar className="h-4 w-4" />}
+                                  {notification.type === "lab" && <FileText className="h-4 w-4" />}
+                                  {notification.type === "message" && <MessageSquare className="h-4 w-4" />}
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold">{notification.title}</h4>
+                                  <p className="text-sm text-gray-600">{notification.message}</p>
+                                  <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                                </div>
                               </div>
-                              <div>
-                                <h4 className="font-semibold">{notification.title}</h4>
-                                <p className="text-sm text-gray-600">{notification.message}</p>
-                                <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                              </div>
+                              <Badge variant={
+                                notification.priority === "high" ? "destructive" :
+                                notification.priority === "medium" ? "default" : "secondary"
+                              }>
+                                {notification.priority}
+                              </Badge>
                             </div>
-                            <Badge variant={
-                              notification.priority === "high" ? "destructive" :
-                              notification.priority === "medium" ? "default" : "secondary"
-                            }>
-                              {notification.priority}
-                            </Badge>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </ScrollArea>
                 </CardContent>
               </Card>
@@ -416,49 +341,57 @@ const Dashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Patient Summaries</CardTitle>
-                  <CardDescription>Quick access to patient information and files</CardDescription>
+                  <CardDescription>Patient information from appointments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {patients.map((patient) => (
-                      <div
-                        key={patient.id}
-                        className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold">
-                                {patient.name.split(' ').map(n => n[0]).join('')}
-                              </span>
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">{patient.name}</h3>
-                              <p className="text-sm text-gray-600">Age: {patient.age} • {patient.condition}</p>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <span className="text-xs text-gray-500">Last visit: {patient.lastVisit}</span>
-                                {patient.allergies.length > 0 && (
-                                  <Badge variant="destructive" className="text-xs">
-                                    Allergies: {patient.allergies.join(', ')}
-                                  </Badge>
-                                )}
+                  {patients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No patient data yet</p>
+                      <p className="text-sm">Patient summaries will appear when appointments are created</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {patients.map((patient) => (
+                        <div
+                          key={patient.id}
+                          className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 font-semibold">
+                                  {patient.name.split(' ').map(n => n[0]).join('')}
+                                </span>
+                              </div>
+                              <div>
+                                <h3 className="font-semibold">{patient.name}</h3>
+                                <p className="text-sm text-gray-600">Age: {patient.age} • {patient.condition}</p>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span className="text-xs text-gray-500">Last visit: {patient.lastVisit}</span>
+                                  {patient.allergies.length > 0 && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      Allergies: {patient.allergies.join(', ')}
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">
-                              <FileText className="h-4 w-4 mr-2" />
-                              Files ({patient.files})
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Activity className="h-4 w-4 mr-2" />
-                              History
-                            </Button>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-2" />
+                                Files ({patient.files})
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <Activity className="h-4 w-4 mr-2" />
+                                History
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -467,36 +400,13 @@ const Dashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Internal Messages</CardTitle>
-                  <CardDescription>Communication with reception and emergency dispatch</CardDescription>
+                  <CardDescription>Communication with client app and emergency dispatch</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Reception Team</h4>
-                        <span className="text-xs text-gray-500">5 min ago</span>
-                      </div>
-                      <p className="text-sm text-gray-600">New patient registration for walk-in appointment</p>
-                      <Button variant="outline" size="sm" className="mt-2">
-                        Reply
-                      </Button>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg bg-blue-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold">Emergency Dispatch</h4>
-                        <span className="text-xs text-gray-500">12 min ago</span>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        <span className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-red-500" />
-                          Ambulance en route to 123 Oak Street - ETA 5 minutes
-                        </span>
-                      </p>
-                      <Button variant="outline" size="sm" className="mt-2">
-                        Acknowledge
-                      </Button>
-                    </div>
+                  <div className="text-center py-8 text-gray-500">
+                    <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>No messages yet</p>
+                    <p className="text-sm">Internal communication will appear here</p>
                   </div>
                 </CardContent>
               </Card>
@@ -507,6 +417,3 @@ const Dashboard = () => {
     </div>
   );
 };
-
-export default Dashboard;
-

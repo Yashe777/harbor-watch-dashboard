@@ -19,46 +19,84 @@ import {
   Weight,
   Ruler
 } from "lucide-react";
-import { useRealtimeAppointments } from "@/hooks/useRealtimeAppointments";
+
+// Mock patient data based on appointment ID
+const mockPatients: { [key: string]: any } = {
+  "1": {
+    id: 1,
+    name: "John Smith",
+    phone: "+1234567890",
+    appointmentDate: new Date().toISOString().split('T')[0],
+    appointmentTime: "09:00",
+    service: "General Consultation",
+    reason: "Regular checkup",
+    status: "scheduled",
+    priority: "normal",
+    location: "Room 101",
+    age: 45,
+    gender: "Male",
+    bloodType: "O+",
+    allergies: "None known",
+    heartRate: 72,
+    bloodPressure: "120/80",
+    temperature: "36.5",
+    weight: 75,
+    height: 175
+  },
+  "2": {
+    id: 2,
+    name: "Sarah Johnson",
+    phone: "+1234567891",
+    appointmentDate: new Date().toISOString().split('T')[0],
+    appointmentTime: "10:30",
+    service: "Teleconsultation",
+    reason: "Follow-up consultation",
+    status: "scheduled",
+    priority: "urgent",
+    location: "Virtual",
+    age: 32,
+    gender: "Female",
+    bloodType: "A+",
+    allergies: "Penicillin",
+    heartRate: 85,
+    bloodPressure: "110/70",
+    temperature: "37.1",
+    weight: 62,
+    height: 165
+  },
+  "3": {
+    id: 3,
+    name: "Michael Brown",
+    phone: "+1234567892",
+    appointmentDate: new Date().toISOString().split('T')[0],
+    appointmentTime: "14:00",
+    service: "Emergency",
+    reason: "Chest pain",
+    status: "in-progress",
+    priority: "urgent",
+    location: "Emergency Room",
+    age: 58,
+    gender: "Male",
+    bloodType: "B-",
+    allergies: "Shellfish",
+    heartRate: 95,
+    bloodPressure: "140/90",
+    temperature: "36.8",
+    weight: 85,
+    height: 180
+  }
+};
 
 export default function PatientDetails() {
   const navigate = useNavigate();
   const { appointmentId } = useParams();
-  const { appointments } = useRealtimeAppointments();
   const [patient, setPatient] = useState<any>(null);
 
   useEffect(() => {
-    if (appointmentId && appointments.length > 0) {
-      const appointment = appointments.find(apt => apt.id.toString() === appointmentId);
-      if (appointment) {
-        // Transform appointment data to patient format
-        const patientData = {
-          id: appointment.id,
-          name: appointment.patient_name || appointment.name || "Unknown Patient",
-          phone: appointment.patient_phone || appointment.phone || "Not provided",
-          appointmentDate: appointment.appointment_date || "Not specified",
-          appointmentTime: appointment.appointment_time || "Not specified",
-          service: appointment.service || "General consultation",
-          reason: appointment.reason || appointment.notes || "No reason specified",
-          status: appointment.status || "scheduled",
-          priority: appointment.priority || "normal",
-          location: appointment.location || "Not specified",
-          // Mock additional patient data
-          age: Math.floor(Math.random() * 50) + 20,
-          gender: Math.random() > 0.5 ? "Male" : "Female",
-          bloodType: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"][Math.floor(Math.random() * 8)],
-          allergies: ["None known", "Penicillin", "Nuts", "Shellfish"][Math.floor(Math.random() * 4)],
-          // Mock vital signs
-          heartRate: Math.floor(Math.random() * 40) + 60,
-          bloodPressure: `${Math.floor(Math.random() * 40) + 100}/${Math.floor(Math.random() * 20) + 60}`,
-          temperature: (Math.random() * 2 + 36).toFixed(1),
-          weight: Math.floor(Math.random() * 50) + 50,
-          height: Math.floor(Math.random() * 30) + 150
-        };
-        setPatient(patientData);
-      }
+    if (appointmentId && mockPatients[appointmentId]) {
+      setPatient(mockPatients[appointmentId]);
     }
-  }, [appointmentId, appointments]);
+  }, [appointmentId]);
 
   if (!patient) {
     return (
@@ -95,7 +133,7 @@ export default function PatientDetails() {
             </Button>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Patient Details</h1>
-              <p className="text-sm text-gray-500">{patient.name}</p>
+              <p className="text-sm text-gray-500">{patient.name} - Mock Data</p>
             </div>
           </div>
           
@@ -199,7 +237,7 @@ export default function PatientDetails() {
                   <Activity className="h-5 w-5 mr-2" />
                   Vital Signs
                 </CardTitle>
-                <CardDescription>Latest measurements</CardDescription>
+                <CardDescription>Mock measurements</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">

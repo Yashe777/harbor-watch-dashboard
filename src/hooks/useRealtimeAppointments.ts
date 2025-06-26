@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-// Using a more flexible type that works with the current database
+// Mock appointment data structure
 interface Appointment {
   id: number;
   created_at: string;
@@ -22,114 +21,78 @@ interface Appointment {
   notes: string | null;
 }
 
+// Mock data
+const mockAppointments: Appointment[] = [
+  {
+    id: 1,
+    created_at: new Date().toISOString(),
+    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_time: "09:00",
+    name: "John Smith",
+    patient_name: "John Smith",
+    phone: "+1234567890",
+    patient_phone: "+1234567890",
+    service: "General Consultation",
+    appointment_type: "In-person",
+    reason: "Regular checkup",
+    status: "scheduled",
+    priority: "normal",
+    location: "Room 101",
+    notes: "First visit"
+  },
+  {
+    id: 2,
+    created_at: new Date().toISOString(),
+    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_time: "10:30",
+    name: "Sarah Johnson",
+    patient_name: "Sarah Johnson",
+    phone: "+1234567891",
+    patient_phone: "+1234567891",
+    service: "Teleconsultation",
+    appointment_type: "Teleconsultation",
+    reason: "Follow-up consultation",
+    status: "scheduled",
+    priority: "urgent",
+    location: "Virtual",
+    notes: "Previous surgery follow-up"
+  },
+  {
+    id: 3,
+    created_at: new Date().toISOString(),
+    appointment_date: new Date().toISOString().split('T')[0],
+    appointment_time: "14:00",
+    name: "Michael Brown",
+    patient_name: "Michael Brown",
+    phone: "+1234567892",
+    patient_phone: "+1234567892",
+    service: "Emergency",
+    appointment_type: "Emergency",
+    reason: "Chest pain",
+    status: "in-progress",
+    priority: "urgent",
+    location: "Emergency Room",
+    notes: "Urgent case"
+  }
+];
+
 export const useRealtimeAppointments = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch initial appointments
-    const fetchAppointments = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('appointments')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching appointments:', error);
-          toast({
-            title: "Error",
-            description: "Failed to load appointments",
-            variant: "destructive",
-          });
-        } else {
-          console.log('Loaded appointments:', data?.length || 0);
-          setAppointments(data || []);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAppointments();
-
-    // Subscribe to real-time changes with proper channel naming
-    const channel = supabase
-      .channel('appointments-realtime-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'appointments'
-        },
-        (payload) => {
-          console.log('New appointment received via realtime:', payload.new);
-          const newAppointment = payload.new as Appointment;
-          
-          setAppointments(prev => [newAppointment, ...prev]);
-          
-          toast({
-            title: "New Appointment",
-            description: `New appointment with ${newAppointment.name || 'Unknown'} scheduled`,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'appointments'
-        },
-        (payload) => {
-          console.log('Appointment updated via realtime:', payload.new);
-          const updatedAppointment = payload.new as Appointment;
-          
-          setAppointments(prev => 
-            prev.map(apt => apt.id === updatedAppointment.id ? updatedAppointment : apt)
-          );
-          
-          toast({
-            title: "Appointment Updated",
-            description: `Appointment with ${updatedAppointment.name || 'Unknown'} updated`,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'appointments'
-        },
-        (payload) => {
-          console.log('Appointment deleted via realtime:', payload.old);
-          const deletedAppointment = payload.old as Appointment;
-          
-          setAppointments(prev => 
-            prev.filter(apt => apt.id !== deletedAppointment.id)
-          );
-          
-          toast({
-            title: "Appointment Cancelled",
-            description: `Appointment cancelled`,
-          });
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to appointments realtime updates');
-        }
+    // Simulate loading time
+    const timer = setTimeout(() => {
+      setAppointments(mockAppointments);
+      setLoading(false);
+      
+      toast({
+        title: "Dashboard Connected",
+        description: "Using mock appointment data",
       });
+    }, 1000);
 
-    return () => {
-      console.log('Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   return { appointments, loading };

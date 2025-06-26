@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,24 +35,23 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState("list");
 
   useEffect(() => {
-    const auth = localStorage.getItem("doctorAuth");
-    if (!auth) {
-      navigate("/");
-      return;
-    }
-    setUser(JSON.parse(auth));
+    // Set mock user data instead of checking localStorage
+    setUser({
+      name: "Dr. Siham Harhour",
+      role: "doctor",
+      email: "siham.harhour@hospital.com"
+    });
 
-    console.log("Dashboard connected to client app:", "harhour-aid-mobile-65.lovable.app");
-    console.log("Real-time integration active - waiting for appointments and notifications");
-    
-  }, [navigate]);
+    console.log("Dashboard running in standalone mode with mock data");
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("doctorAuth");
+    // Simple logout without Supabase
+    setUser(null);
     navigate("/");
     toast({
       title: "Logged Out",
-      description: "You have been securely logged out.",
+      description: "You have been logged out from the dashboard.",
     });
   };
 
@@ -85,7 +85,16 @@ export default function Dashboard() {
     read: notif.read
   }));
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Stethoscope className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -98,7 +107,7 @@ export default function Dashboard() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">Harhour Emergency</h1>
-              <p className="text-sm text-gray-500">Medical Dashboard</p>
+              <p className="text-sm text-gray-500">Medical Dashboard - Standalone Mode</p>
             </div>
           </div>
           
@@ -143,7 +152,7 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{transformedAppointments.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {transformedAppointments.filter(a => a.priority === "urgent").length} urgent, {transformedAppointments.filter(a => a.priority === "routine").length} routine
+                  {transformedAppointments.filter(a => a.priority === "urgent").length} urgent, {transformedAppointments.filter(a => a.priority === "normal").length} routine
                 </p>
               </CardContent>
             </Card>
@@ -170,7 +179,7 @@ export default function Dashboard() {
                 <div className="text-2xl font-bold">
                   {transformedNotifications.filter(n => n.type === "message" && !n.read).length}
                 </div>
-                <p className="text-xs text-muted-foreground">From client app</p>
+                <p className="text-xs text-muted-foreground">Mock data</p>
               </CardContent>
             </Card>
 
@@ -201,8 +210,8 @@ export default function Dashboard() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Live Appointments</CardTitle>
-                      <CardDescription>Real-time appointments from client app: harhour-aid-mobile-65.lovable.app</CardDescription>
+                      <CardTitle>Mock Appointments</CardTitle>
+                      <CardDescription>Sample appointment data for demonstration</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button variant="outline" size="sm">
@@ -220,12 +229,6 @@ export default function Dashboard() {
                     <div className="text-center py-8 text-gray-500">
                       <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300 animate-spin" />
                       <p>Loading appointments...</p>
-                    </div>
-                  ) : transformedAppointments.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No appointments yet</p>
-                      <p className="text-sm">Appointments from your client app will appear here automatically</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -280,8 +283,8 @@ export default function Dashboard() {
             <TabsContent value="notifications">
               <Card>
                 <CardHeader>
-                  <CardTitle>Real-Time Notifications</CardTitle>
-                  <CardDescription>Live alerts from your client app</CardDescription>
+                  <CardTitle>Mock Notifications</CardTitle>
+                  <CardDescription>Sample notification data</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-96">
@@ -289,12 +292,6 @@ export default function Dashboard() {
                       <div className="text-center py-8 text-gray-500">
                         <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300 animate-spin" />
                         <p>Loading notifications...</p>
-                      </div>
-                    ) : transformedNotifications.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No notifications yet</p>
-                        <p className="text-sm">Notifications from your client app will appear here automatically</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -345,13 +342,13 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Patient Information</CardTitle>
-                  <CardDescription>Patient data from appointments</CardDescription>
+                  <CardDescription>Mock patient data</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-gray-500">
                     <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Patient profiles will be created automatically</p>
-                    <p className="text-sm">When appointments include patient information from your client app</p>
+                    <p>Patient profiles from mock data</p>
+                    <p className="text-sm">Click "View Patient" on appointments to see detailed information</p>
                   </div>
                 </CardContent>
               </Card>
@@ -361,13 +358,13 @@ export default function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Internal Messages</CardTitle>
-                  <CardDescription>Communication with client app and emergency dispatch</CardDescription>
+                  <CardDescription>Mock communication system</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center py-8 text-gray-500">
                     <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No messages yet</p>
-                    <p className="text-sm">Internal communication will appear here</p>
+                    <p>No messages in mock mode</p>
+                    <p className="text-sm">This is demonstration data only</p>
                   </div>
                 </CardContent>
               </Card>

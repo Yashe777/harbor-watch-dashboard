@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 interface Notification {
@@ -15,109 +14,66 @@ interface Notification {
   doctor_id: string | null;
 }
 
+// Mock notifications data
+const mockNotifications: Notification[] = [
+  {
+    id: "1",
+    created_at: new Date().toISOString(),
+    type: "emergency",
+    title: "Emergency Alert",
+    message: "New emergency patient in Room 1",
+    priority: "high",
+    read: false,
+    appointment_id: 3,
+    doctor_id: "dr-siham"
+  },
+  {
+    id: "2",
+    created_at: new Date(Date.now() - 300000).toISOString(),
+    type: "appointment",
+    title: "New Appointment",
+    message: "Sarah Johnson scheduled for teleconsultation",
+    priority: "medium",
+    read: false,
+    appointment_id: 2,
+    doctor_id: "dr-siham"
+  },
+  {
+    id: "3",
+    created_at: new Date(Date.now() - 600000).toISOString(),
+    type: "lab",
+    title: "Lab Results Ready",
+    message: "Blood test results for John Smith are ready",
+    priority: "medium",
+    read: true,
+    appointment_id: 1,
+    doctor_id: "dr-siham"
+  }
+];
+
 export const useRealtimeNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch initial notifications using direct query since the table might not be in types yet
-    const fetchNotifications = async () => {
-      try {
-        // Try to fetch from notifications table directly
-        const response = await fetch(`https://vidswyunnkwmxgzrhrbt.supabase.co/rest/v1/notifications?order=created_at.desc`, {
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
-            'Content-Type': 'application/json'
-          }
-        });
+    // Simulate loading time
+    const timer = setTimeout(() => {
+      setNotifications(mockNotifications);
+      setLoading(false);
+    }, 800);
 
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data || []);
-          console.log('Loaded notifications:', data?.length || 0);
-        } else {
-          console.error('Error fetching notifications: table may not exist yet');
-          setNotifications([]);
-        }
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        setNotifications([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNotifications();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('notifications-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications'
-        },
-        (payload) => {
-          console.log('New notification received:', payload.new);
-          const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
-          
-          // Show toast for new notifications
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-            variant: newNotification.priority === "high" ? "destructive" : "default",
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications'
-        },
-        (payload) => {
-          console.log('Notification updated:', payload.new);
-          const updatedNotification = payload.new as Notification;
-          setNotifications(prev => 
-            prev.map(notif => notif.id === updatedNotification.id ? updatedNotification : notif)
-          );
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   const markAsRead = async (id: string) => {
-    try {
-      // Use direct API call since notifications table might not be in types
-      const response = await fetch(`https://vidswyunnkwmxgzrhrbt.supabase.co/rest/v1/notifications?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZHN3eXVubmt3bXhnenJocmJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1OTQ5MTcsImV4cCI6MjA2NjE3MDkxN30.T4JOF28i8pEMxnMYG07dzVJBR9-sYpFdO6va6F4gDD8',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ read: true })
-      });
-
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
-        );
-      } else {
-        console.error('Error marking notification as read');
-      }
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
+    setNotifications(prev => 
+      prev.map(notif => notif.id === id ? { ...notif, read: true } : notif)
+    );
+    
+    toast({
+      title: "Notification",
+      description: "Marked as read",
+    });
   };
 
   return { notifications, loading, markAsRead };

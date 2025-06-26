@@ -35,18 +35,18 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState("list");
 
   useEffect(() => {
-    // Set mock user data instead of checking localStorage
+    // Set mock user data - completely standalone
     setUser({
       name: "Dr. Siham Harhour",
       role: "doctor",
       email: "siham.harhour@hospital.com"
     });
 
-    console.log("Dashboard running in standalone mode with mock data");
+    console.log("Dashboard running in standalone mode - no external connections");
   }, []);
 
   const handleLogout = () => {
-    // Simple logout without Supabase
+    // Simple logout - completely local
     setUser(null);
     navigate("/");
     toast({

@@ -87,8 +87,8 @@ export const useRealtimeAppointments = () => {
       setLoading(false);
       
       toast({
-        title: "Dashboard Connected",
-        description: "Using mock appointment data",
+        title: "Dashboard Ready",
+        description: "Standalone mode - no database connection required",
       });
     }, 1000);
 
